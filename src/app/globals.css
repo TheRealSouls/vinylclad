@@ -1,0 +1,175 @@
+@import "tailwindcss" source("../");
+
+@theme {
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "Cascadia Mono", monospace;
+
+  /* Paper and ink, one vermilion accent. Text colours reach WCAG AA (4.5:1)
+     on bg and surface. line is decorative; line-strong (3:1) edges form
+     fields so they can be found. */
+  --color-bg: #ece6da;
+  --color-surface: #f5f1e8;
+  --color-surface-2: #e2dacb;
+  --color-line: #d2c8b6;
+  --color-line-strong: #877d6e;
+  --color-ink: #1f1b16;
+  --color-muted: #554d43;
+  --color-faint: #6b6255;
+  --color-accent: #b33f1c;
+  --color-accent-hi: #943315;
+  --color-good: #2c6638;
+  --color-good-bg: #d6e2cf;
+}
+
+/* Square corners and flat surfaces throughout. */
+*,
+::before,
+::after {
+  border-radius: 0;
+}
+
+/* Grid items default to their content's width, so a long unwrapped line
+   (a truncated title, a wide table) would push the page sideways. */
+.grid > * {
+  min-width: 0;
+}
+
+html {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  font-feature-settings: "ss01";
+}
+
+h1,
+h2,
+h3 {
+  font-stretch: 78%;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+a {
+  text-underline-offset: 3px;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-surface);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Form controls */
+.input {
+  display: block;
+  width: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line-strong);
+  padding: 0.45rem 0.6rem;
+  font: inherit;
+  color: inherit;
+}
+.input:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -1px;
+}
+select.input {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--color-ink) 50%),
+    linear-gradient(135deg, var(--color-ink) 50%, transparent 50%);
+  background-position: calc(100% - 15px) 55%, calc(100% - 10px) 55%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 1.8rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-surface);
+  padding: 0.45rem 0.9rem;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn:hover {
+  background: var(--color-accent-hi);
+  border-color: var(--color-accent-hi);
+}
+.btn:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+.btn-quiet {
+  background: transparent;
+  color: var(--color-ink);
+}
+.btn-quiet:hover {
+  background: var(--color-surface-2);
+  border-color: var(--color-ink);
+}
+.btn-small {
+  padding: 0.2rem 0.55rem;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Data tables: hairline rows, header in small caps. */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+  border-bottom: 1px solid var(--color-ink);
+  padding: 0.4rem 0.6rem;
+  white-space: nowrap;
+}
+.table td {
+  border-bottom: 1px solid var(--color-line);
+  padding: 0.55rem 0.6rem;
+  vertical-align: middle;
+}
+.table tbody tr:hover td {
+  background: var(--color-surface);
+}
+.table .r {
+  text-align: right;
+}
+
+.label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+  margin-bottom: 0.25rem;
+}

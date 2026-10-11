@@ -1,0 +1,154 @@
+// Vinylclad data model.
+// SQLite for local use. Enums are modelled as strings and nothing here is
+// SQLite specific, so switching the provider to "postgresql" is the whole
+// migration when this goes online.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// One row (id 1). Where the records get shipped to and what selling costs.
+model Settings {
+  id               Int      @id @default(1)
+  country          String   @default("GB") // ISO 3166-1 alpha-2
+  postcode         String?
+  currency         String   @default("GBP") // ISO 4217, every price is shown in this
+  // Typical postage for one LP to the home address, by where the seller is.
+  shipDomestic     Float    @default(4.5)
+  shipSameZone     Float    @default(12) // same customs area, other country
+  shipCrossZone    Float    @default(16) // e.g. EU seller to a UK address
+  shipWorld        Float    @default(28)
+  // Import VAT plus handling when a parcel crosses a customs border, as a share of price.
+  importChargePct  Float    @default(0.2)
+  // Marketplace and payment fees when reselling, as a share of the sale price.
+  sellingFeePct    Float    @default(0.125)
+  packagingCost    Float    @default(2)
+  // A listing counts as a deal when it is at least this far under market value.
+  dealThresholdPct Float    @default(0.2)
+  updatedAt        DateTime @updatedAt
+}
+
+// A specific pressing. A first press and a 2015 reissue are separate releases,
+// the same way Discogs treats them.
+model Release {
+  id          String   @id @default(cuid())
+  artist      String
+  title       String
+  year        Int?
+  label       String?
+  catalogNo   String?
+  country     String? // pressing country as Discogs writes it ("UK", "Europe")
+  // LP | 2LP | 3LP | BOX | 12IN | 10IN | 7IN
+  format      String   @default("LP")
+  variant     String? // colour or edition, e.g. "Clear", "Picture disc"
+  pressing    String? // "First press", "Reissue", "Repress"
+  limited     Boolean  @default(false)
+  genres      String? // comma separated
+  coverUrl    String?
+  discogsId   Int?     @unique
+  // Discogs community counts, a cheap first demand signal.
+  haveCount   Int?
+  wantCount   Int?
+  rating      Float?
+  ratingCount Int?
+  notes       String?
+  syncedAt    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items    CollectionItem[]
+  wishes   WishlistItem[]
+  prices   PricePoint[]
+  listings Listing[]
+
+  @@index([artist, title])
+}
+
+model CollectionItem {
+  id           String    @id @default(cuid())
+  releaseId    String
+  release      Release   @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+  // Goldmine grades: M | NM | VG+ | VG | G+ | G | F | P
+  mediaGrade   String    @default("VG+")
+  sleeveGrade  String    @default("VG+")
+  sealed       Boolean   @default(false)
+  paid         Float? // in home currency, including postage
+  acquiredAt   DateTime?
+  source       String? // where it was bought
+  // KEEP | FOR_SALE | SOLD
+  status       String    @default("KEEP")
+  soldPrice    Float?
+  soldAt       DateTime?
+  notes        String?
+  createdAt    DateTime  @default(now())
+
+  @@index([releaseId])
+}
+
+model WishlistItem {
+  id        String   @id @default(cuid())
+  releaseId String   @unique
+  release   Release  @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+  maxPrice  Float? // landed, in home currency
+  minGrade  String   @default("VG+")
+  // 1 high, 2 normal, 3 low
+  priority  Int      @default(2)
+  // LISTEN (for me) | FLIP (only if it makes money)
+  purpose   String   @default("LISTEN")
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
+// Any observed price for a release: a sale, an asking price, a suggestion.
+model PricePoint {
+  id         String   @id @default(cuid())
+  releaseId  String
+  release    Release  @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+  // DISCOGS | EBAY | VINTED | AMAZON | MANUAL | SAMPLE
+  source     String
+  // SOLD | ASKING | LOWEST | SUGGESTED
+  kind       String
+  grade      String? // media grade the price applies to, when known
+  price      Float
+  currency   String
+  observedAt DateTime @default(now())
+  url        String?
+
+  @@index([releaseId, observedAt])
+}
+
+// A copy for sale somewhere, found by a scan or pasted in by hand.
+model Listing {
+  id            String   @id @default(cuid())
+  releaseId     String?
+  release       Release? @relation(fields: [releaseId], references: [id], onDelete: SetNull)
+  source        String // DISCOGS | EBAY | VINTED | AMAZON | OTHER
+  externalId    String?
+  url           String
+  title         String
+  price         Float
+  currency      String
+  shipping      Float? // null when unknown, then estimated from seller country
+  sellerCountry String? // ISO 3166-1 alpha-2
+  grade         String?
+  sleeveGrade   String?
+  // ACTIVE | GONE | DISMISSED | BOUGHT
+  status        String   @default("ACTIVE")
+  firstSeenAt   DateTime @default(now())
+  lastSeenAt    DateTime @default(now())
+
+  @@unique([source, externalId])
+  @@index([status])
+}
+
+// Exchange rates against EUR, refreshed from the ECB feed.
+model FxRate {
+  currency  String   @id
+  perEur    Float
+  updatedAt DateTime @updatedAt
+}
